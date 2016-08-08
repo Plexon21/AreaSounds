@@ -1,0 +1,19 @@
+name: AreaSounds
+main: com.plexon21.AreaSounds.AreaSounds
+version: 1.0
+permissions:
+    p21.infinitebucket.*:
+        description: Gives access to all InfiniteBucket commands
+        children:
+            p21.infinitebucket.craft: true
+            p21.infinitebucket.use: true
+    p21.infinitebucket.craft:
+        description: Craft an infinite bucket.
+        default: false
+    p21.infinitebucket.use:
+        description: Use an infinite bucket.
+        default: false
+commands:
+   infinitebucket:
+      description: This command reloads the config from the file.
+      usage: /infinitebucket reload
