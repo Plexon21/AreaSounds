@@ -1,22 +1,20 @@
 package com.plexon21.AreaSounds;
 
-import java.util.ArrayList;
+import java.util.logging.Logger;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class AreaSounds extends JavaPlugin {
 	FileConfiguration config;
 	World adventureWorld;
+	Logger log;
 
 	@Override
 	public void onEnable() {
+		log = this.getLogger();
 		AreaSounds();
 		saveDefaultConfig();
 		config = getConfig();
@@ -34,43 +32,60 @@ public class AreaSounds extends JavaPlugin {
 		playAreaSound(name, volume, pitch, radius, x, y, z, null);
 	}
 
+	// volume can be between 0.0 and 1.0
 	public void playAreaSound(String name, String volume, String pitch, String radius, String x, String y, String z,
 			String loop, String[] players) {
-		// TODO: World in config
-		float vol = Float.parseFloat(volume);
-		float pit = Float.parseFloat(pitch);
-		int rad = Integer.parseInt(radius);
-		Location loc = new Location(adventureWorld, Double.parseDouble(x), Double.parseDouble(y),
-				Double.parseDouble(z));
-		Boolean loopSound = Boolean.parseBoolean(loop);
+		try {
+			float vol = Float.parseFloat(volume);
+			float pit = Float.parseFloat(pitch);
+			int rad = Integer.parseInt(radius);
+			double xParsed = Double.parseDouble(x);
+			double yParsed = Double.parseDouble(y);
+			double zParsed = Double.parseDouble(z);
+			Boolean loopSound = Boolean.parseBoolean(loop);
 
-		if (!loopSound) {
-			playAreaSoundOnce(name, vol, pit, rad, loc, players);
-		}
+			// calculate volume, because playSound has no radius parameter
+			// volume of 1 can be heard 16 blocks, volume of 10 can be heard 160
+			// blocks.
+			// cut of higher or lower volumes
+			vol = (vol > 1.0f) ? 1.0f : vol;
+			vol = (vol < 0.0f) ? 0.0f : vol;
+			float radF = rad / 16;
+			vol = vol * radF;
 
-		else {
+			if (!loopSound) {
+				Location loc = new Location(adventureWorld, xParsed, yParsed, zParsed);
+				playAreaSoundOnce(name, vol, pit, loc, players);
+			}
 
+			else {
+				loopAreaSound(name, vol, pit, xParsed, yParsed, zParsed, players);
+			}
+		} catch (Exception e) {
+			log.info("AreaSound could not be played, check your command syntax.");
 		}
 
 	}
 
-	public void loopAreaSound(String name, float volume, float pitch, int radius, Location location, int duration,
-			String[] players) {
+	public void loopAreaSound(String name, float volume, float pitch, double x, double y, double z, String[] players) {
 
 		// duration in 1/10 seconds -> times 2 equals number of ticks
 		int length = 2 * (Integer.parseInt(name.substring(name.indexOf('_') + 1)));
+		
 
 		// TODO: Loop logic
 
+		Location loc = new Location(adventureWorld, x, y, z);
+
+
 	}
 
-	public void playAreaSoundOnce(String name, float volume, float pitch, int radius, Location location,
-			String[] players) {
+	public void playAreaSoundOnce(String name, float volume, float pitch, Location location, String[] players) {
 		if (players == null) {
 			adventureWorld.playSound(location, name, volume, pitch);
 		} else {
 			for (String p : players) {
-				//only if player is online
+				// only if player is online
 				if (p != null)
 					getServer().getPlayer(p).playSound(location, name, volume, pitch);
 			}

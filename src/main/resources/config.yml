@@ -1,2 +1,15 @@
 WorldName: world
 loopAreaSounds:
+# Example Sound:
+#
+#    - pling_325:
+#        volume: 1.0
+#        pitch: 1.0
+#        radius: 15
+#        x: 255
+#        y: 15
+#        z: 900
+#        duration: 500
+#        players:
+#            - Plexon21
+#            - detig_iii
