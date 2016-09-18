@@ -14,6 +14,7 @@ public class AreaSounds extends JavaPlugin {
 	World adventureWorld;
 	Logger log;
 	ArrayList<Integer> tasks;
+	BukkitScheduler scheduler;
 
 	@Override
 	public void onEnable() {
@@ -23,6 +24,7 @@ public class AreaSounds extends JavaPlugin {
 		adventureWorld = getServer().getWorld(config.getString("WorldName"));
 		this.getCommand("areasound").setExecutor(new AreaSoundsExecutor(this));
 		tasks = new ArrayList<Integer>();
+		scheduler = getServer().getScheduler();
 		
 		// TODO: read looped sounds from config and start them
 	}
@@ -80,7 +82,6 @@ public class AreaSounds extends JavaPlugin {
 
 		final Location loc = new Location(adventureWorld, x, y, z);	
 		
-		BukkitScheduler scheduler = getServer().getScheduler();
 		int taskID = scheduler.scheduleSyncRepeatingTask(this, new Runnable(){
 			public void run() {
 				playAreaSoundOnce(name,volume,pitch,loc,players);		
@@ -100,5 +101,16 @@ public class AreaSounds extends JavaPlugin {
 					getServer().getPlayer(p).playSound(location, name, volume, pitch);
 			}
 		}
+	}
+
+	public void stopSingleSound(int taskID) {
+		scheduler.cancelTask(taskID);
+		//TODO: remove from config
+		
+	}
+
+	public void stopAllSounds() {
+		scheduler.cancelAllTasks();		
+		//TODO: remove from config
 	}
 }

@@ -14,6 +14,9 @@ permissions:
         description: Use an infinite bucket.
         default: false
 commands:
-   infinitebucket:
-      description: This command reloads the config from the file.
-      usage: /infinitebucket reload
+   playAreaSound:
+      description: Play a specific sound, returns the id of the sound.
+      usage: /playAreaSound name, volume (float), pitch (float), radius (int), x (float), y (float), z (float), loop (true/false),[player1], [player2]....
+   stopAreaSound:
+      description: This command stops a specific task or all if no id is given
+      usage: /stopAreaSound taskID
