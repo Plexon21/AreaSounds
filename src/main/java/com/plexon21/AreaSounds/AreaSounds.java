@@ -1,5 +1,13 @@
 package com.plexon21.AreaSounds;
 
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -14,7 +22,10 @@ public class AreaSounds extends JavaPlugin {
 	World adventureWorld;
 	Logger log;
 	ArrayList<Integer> tasks;
+	ArrayList<AreaSound> activeSounds;
 	BukkitScheduler scheduler;
+	String filePath;
+	File soundsFile;
 
 	@Override
 	public void onEnable() {
@@ -25,13 +36,28 @@ public class AreaSounds extends JavaPlugin {
 		this.getCommand("areasound").setExecutor(new AreaSoundsExecutor(this));
 		tasks = new ArrayList<Integer>();
 		scheduler = getServer().getScheduler();
-		
-		// TODO: read looped sounds from config and start them
+		filePath = config.getString("LoopFile");
+
+		try {
+			FileInputStream fis = new FileInputStream(filePath);
+			ObjectInputStream ois = new ObjectInputStream(fis);
+			while (true) {
+				AreaSound sound = (AreaSound) ois.readObject();
+				loopAreaSound(sound);
+			}
+
+		} catch (FileNotFoundException e) {
+			log.info("AreaSounds file not found");
+		} catch (IOException e) {
+			log.info("Reading of AreaSounds file failed");
+		} catch (ClassNotFoundException e) {
+			
+		}
 	}
 
 	@Override
 	public void onDisable() {
-		
+
 	}
 
 	public void playAreaSound(String name, String volume, String pitch, String radius, String x, String y, String z,
@@ -43,6 +69,7 @@ public class AreaSounds extends JavaPlugin {
 	public void playAreaSound(String name, String volume, String pitch, String radius, String x, String y, String z,
 			String loop, String[] players) {
 		try {
+			AreaSound sound;
 			float vol = Float.parseFloat(volume);
 			float pit = Float.parseFloat(pitch);
 			int rad = Integer.parseInt(radius);
@@ -60,14 +87,20 @@ public class AreaSounds extends JavaPlugin {
 			float radF = rad / 16;
 			vol = vol * radF;
 
+			sound = new AreaSound(name, vol, pit, xParsed, yParsed, zParsed, loopSound, players);
 			if (!loopSound) {
-				Location loc = new Location(adventureWorld, xParsed, yParsed, zParsed);
-				playAreaSoundOnce(name, vol, pit, loc, players);
+				playAreaSoundOnce(sound);
 			}
 
 			else {
-				loopAreaSound(name, vol, pit, xParsed, yParsed, zParsed, players);
-				// TODO: write to config
+				loopAreaSound(sound);
+
+				// write AreaSound into file
+				FileOutputStream fos = new FileOutputStream(filePath);
+				ObjectOutputStream oos = new ObjectOutputStream(fos);
+
+				oos.writeObject(sound);
+				oos.close();
 			}
 		} catch (Exception e) {
 			log.info("AreaSound could not be played, check your command syntax.");
@@ -75,42 +108,41 @@ public class AreaSounds extends JavaPlugin {
 
 	}
 
-	public void loopAreaSound(final String name, final float volume, final float pitch, double x, double y, double z, final String[] players) {
+	public void loopAreaSound(final AreaSound sound) {
 
 		// duration in 1/10 seconds -> times 2 equals number of ticks
-		long length = 2 * (Integer.parseInt(name.substring(name.indexOf('_') + 1)));
+		long length = 2 * (Integer.parseInt(sound.name.substring(sound.name.indexOf('_') + 1)));
 
-		final Location loc = new Location(adventureWorld, x, y, z);	
-		
-		int taskID = scheduler.scheduleSyncRepeatingTask(this, new Runnable(){
+		int taskID = scheduler.scheduleSyncRepeatingTask(this, new Runnable() {
 			public void run() {
-				playAreaSoundOnce(name,volume,pitch,loc,players);		
-			}				
+				playAreaSoundOnce(new AreaSound(sound));
+			}
 		}, 0L, length);
-		log.info("Sound "+taskID+" started.");
+		log.info("Sound " + taskID + " started.");
 		tasks.add(taskID);
+		activeSounds.add(sound);
 	}
 
-	public void playAreaSoundOnce(String name, float volume, float pitch, Location location, String[] players) {
-		if (players == null) {
-			adventureWorld.playSound(location, name, volume, pitch);
+	public void playAreaSoundOnce(AreaSound sound) {
+		Location location = new Location(adventureWorld, sound.x, sound.y, sound.z);
+		if (sound.players == null) {
+			adventureWorld.playSound(location, sound.name, sound.volume, sound.pitch);
 		} else {
-			for (String p : players) {
+			for (String p : sound.players) {
 				// only if player is online
 				if (p != null)
-					getServer().getPlayer(p).playSound(location, name, volume, pitch);
+					getServer().getPlayer(p).playSound(location, sound.name, sound.volume, sound.pitch);
 			}
 		}
 	}
 
 	public void stopSingleSound(int taskID) {
 		scheduler.cancelTask(taskID);
-		//TODO: remove from config
-		
 	}
 
 	public void stopAllSounds() {
-		scheduler.cancelAllTasks();		
-		//TODO: remove from config
+		scheduler.cancelAllTasks();
+		soundsFile = new File(filePath);
+		soundsFile.delete();
 	}
 }
