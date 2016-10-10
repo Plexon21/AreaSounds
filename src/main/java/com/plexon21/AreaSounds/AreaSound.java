@@ -32,9 +32,11 @@ public class AreaSound implements Serializable {
 		this.y = sound.y;
 		this.z = sound.z;
 		this.loop = sound.loop;
+		if(sound.players!=null){
 		this.players = new String[sound.players.length];
 		for (int i = 0; i < sound.players.length; i++) {
 			this.players[i] = new String(sound.players[i]);
-		}
+		}}
+		else this.players = null;
 	}
 }

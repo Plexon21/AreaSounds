@@ -15,7 +15,7 @@ public class AreaSoundsExecutor implements CommandExecutor {
 		this.plugin = plugin;
 		this.log = plugin.getLogger();
 	}
-
+	
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		// mandatory arguments: name, volume (float), pitch (float),
 		// radius (int), x (float), y (float), z (float), loop (true/false)
@@ -29,6 +29,11 @@ public class AreaSoundsExecutor implements CommandExecutor {
 					players[i] = args[i];
 				}
 				plugin.playAreaSound(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], players);
+				return true;
+			}
+			else{
+				plugin.playAreaSound(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+				return true;
 			}
 		}
 
@@ -37,10 +42,12 @@ public class AreaSoundsExecutor implements CommandExecutor {
 			if (args.length == 0) {
 				plugin.stopAllSounds();
 				log.info("all sounds stopped");
+				return true;
 			} else {
 				int taskID = Integer.parseInt(args[0]);
 				plugin.stopSingleSound(taskID);
 				log.info("sound with id " + taskID + " stopped");
+				return true;
 			}
 		}
 		return false;

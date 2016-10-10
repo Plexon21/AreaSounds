@@ -33,7 +33,8 @@ public class AreaSounds extends JavaPlugin {
 		saveDefaultConfig();
 		config = getConfig();
 		adventureWorld = getServer().getWorld(config.getString("WorldName"));
-		this.getCommand("areasound").setExecutor(new AreaSoundsExecutor(this));
+		this.getCommand("playAreaSound").setExecutor(new AreaSoundsExecutor(this));
+		this.getCommand("stopAreaSound").setExecutor(new AreaSoundsExecutor(this));
 		tasks = new ArrayList<Integer>();
 		scheduler = getServer().getScheduler();
 		filePath = config.getString("LoopFile");
@@ -62,7 +63,7 @@ public class AreaSounds extends JavaPlugin {
 
 	public void playAreaSound(String name, String volume, String pitch, String radius, String x, String y, String z,
 			String loop) {
-		playAreaSound(name, volume, pitch, radius, x, y, z, null);
+		playAreaSound(name, volume, pitch, radius, x, y, z,loop, null);
 	}
 
 	// volume can be between 0.0 and 1.0
@@ -103,7 +104,7 @@ public class AreaSounds extends JavaPlugin {
 				oos.close();
 			}
 		} catch (Exception e) {
-			log.info("AreaSound could not be played, check your command syntax.");
+			log.info(e.getMessage());
 		}
 
 	}
