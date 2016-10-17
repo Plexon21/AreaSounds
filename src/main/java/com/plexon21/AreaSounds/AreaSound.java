@@ -2,7 +2,7 @@ package com.plexon21.AreaSounds;
 
 import java.io.Serializable;
 
-public class AreaSound implements Serializable {
+public class AreaSound {
 	private static final long serialVersionUID = 7012304631946917404L;
 	public String name;
 	public long ID;

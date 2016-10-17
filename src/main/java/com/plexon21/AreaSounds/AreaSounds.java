@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -17,7 +18,13 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
-public class AreaSounds extends JavaPlugin {
+import com.google.gson.Gson;
+
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.world.*;
+
+public class AreaSounds extends JavaPlugin implements Listener {
 	FileConfiguration config;
 	World adventureWorld;
 	Logger log;
@@ -33,8 +40,8 @@ public class AreaSounds extends JavaPlugin {
 		saveDefaultConfig();
 		config = getConfig();
 		adventureWorld = getServer().getWorld(config.getString("WorldName"));
-		this.getCommand("playAreaSound").setExecutor(new AreaSoundsExecutor(this));
-		this.getCommand("stopAreaSound").setExecutor(new AreaSoundsExecutor(this));
+		this.getCommand("areasound").setExecutor(new AreaSoundsExecutor(this));
+		getServer().getPluginManager().registerEvents(this, this);
 		tasks = new ArrayList<Integer>();
 		scheduler = getServer().getScheduler();
 		filePath = config.getString("LoopFile");
@@ -52,7 +59,7 @@ public class AreaSounds extends JavaPlugin {
 		} catch (IOException e) {
 			log.info("Reading of AreaSounds file failed");
 		} catch (ClassNotFoundException e) {
-			
+
 		}
 	}
 
@@ -63,7 +70,7 @@ public class AreaSounds extends JavaPlugin {
 
 	public void playAreaSound(String name, String volume, String pitch, String radius, String x, String y, String z,
 			String loop) {
-		playAreaSound(name, volume, pitch, radius, x, y, z,loop, null);
+		playAreaSound(name, volume, pitch, radius, x, y, z, null);
 	}
 
 	// volume can be between 0.0 and 1.0
@@ -104,7 +111,7 @@ public class AreaSounds extends JavaPlugin {
 				oos.close();
 			}
 		} catch (Exception e) {
-			log.info(e.getMessage());
+			log.info("AreaSound could not be played, check your command syntax.");
 		}
 
 	}
@@ -145,5 +152,25 @@ public class AreaSounds extends JavaPlugin {
 		scheduler.cancelAllTasks();
 		soundsFile = new File(filePath);
 		soundsFile.delete();
+	}
+
+	@EventHandler
+	public void onWorldSave(WorldSaveEvent event) {
+		Gson gson = new Gson();
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(soundsFile);
+			for (AreaSound sound : activeSounds) {
+				writer.println(gson.toJson(sound));
+			}
+			log.info("all sounds written into file successfully");
+		} catch (FileNotFoundException e) {
+			log.info("Sound-file not found");
+		} finally {
+			if (writer != null) {
+				writer.close();
+			}
+		}
+		
 	}
 }
