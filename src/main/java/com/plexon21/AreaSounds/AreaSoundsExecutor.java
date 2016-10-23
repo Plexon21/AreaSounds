@@ -26,8 +26,8 @@ public class AreaSoundsExecutor implements CommandExecutor {
 				return false;
 			} else if (args.length > 8) {
 				String[] players = new String[args.length - 8];
-				for (int i = 7; i < args.length; i++) {
-					players[i] = args[i];
+				for (int i = 8; i < args.length; i++) {
+					players[i-8] = args[i];
 				}
 				plugin.playAreaSound(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], players);
 				sender.sendMessage("Sound started");
@@ -43,16 +43,18 @@ public class AreaSoundsExecutor implements CommandExecutor {
 		else if (cmd.getName().equalsIgnoreCase("stopAreaSound")) {
 			if (args.length == 0) {
 				plugin.stopAllSounds();
-				log.info("all sounds stopped");
+				sender.sendMessage("All sounds stopped.");
 				return true;
-			} else {
+			}/* Disabled until solution for concurrent mod exception is found 
+			else {
 				int taskID = Integer.parseInt(args[0]);
 				plugin.stopSingleSound(taskID);
 				log.info("sound with id " + taskID + " stopped");
 				return true;
-			}
+			}*/
 		} else if (cmd.getName().equalsIgnoreCase("saveAreaSound")) {
 			plugin.saveSoundsToFile();
+			sender.sendMessage("Sounds saved to file.");
 		}
 		return false;
 	}

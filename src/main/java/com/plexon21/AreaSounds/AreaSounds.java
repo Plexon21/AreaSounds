@@ -12,11 +12,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
@@ -24,14 +29,17 @@ import com.google.gson.Gson;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.*;
 
 public class AreaSounds extends JavaPlugin implements Listener {
 	FileConfiguration config;
 	World adventureWorld;
 	Logger log;
-	ArrayList<Integer> tasks = new ArrayList<Integer>();
-	ArrayList<AreaSound> activeSounds = new ArrayList<AreaSound>();
+	List<Integer> tasks = new ArrayList<Integer>();
+	List<AreaSound> activeSounds = new ArrayList<AreaSound>();
+	// List<Integer> tasks = new CopyOnWriteArrayList<Integer>();
+	// List<AreaSound> activeSounds = new CopyOnWriteArrayList<AreaSound>();
 	BukkitScheduler scheduler;
 	File soundsFile;
 
@@ -125,22 +133,20 @@ public class AreaSounds extends JavaPlugin implements Listener {
 		} else {
 			for (String p : sound.players) {
 				// only if player is online
-				if (p != null)
-					getServer().getPlayer(p).playSound(location, sound.name, sound.volume, sound.pitch);
+				Player pl = getServer().getPlayer(p);
+				if (pl != null)
+					pl.playSound(location, sound.name, sound.volume, sound.pitch);
 			}
 		}
 	}
-
-	public void stopSingleSound(int taskID) {
-		scheduler.cancelTask(taskID);
-		int soundID = 0;
-		for (AreaSound sound : activeSounds) {
-			if (sound.ID == taskID)
-				activeSounds.remove(soundID);
-			soundID++;
-		}
-		tasks.remove(taskID);
-	}
+	/*
+	 * disabled until solution for concurrentmodificationException is found
+	 * public void stopSingleSound(int taskID) { scheduler.cancelTask(taskID);
+	 * int soundID = 0; for (AreaSound sound : activeSounds) { if (sound.ID ==
+	 * taskID) activeSounds.remove(soundID); soundID++; } int taskListID = 0;
+	 * for (int task : tasks) { if (task == taskID) tasks.remove(taskListID);
+	 * taskListID++; } }
+	 */
 
 	public void stopAllSounds() {
 		scheduler.cancelAllTasks();
@@ -155,9 +161,9 @@ public class AreaSounds extends JavaPlugin implements Listener {
 		saveSoundsToFile();
 	}
 
+
 	public void saveSoundsToFile() {
 
-		log.info("Path to soundfile " + soundsFile.getAbsolutePath());
 		Gson gson = new Gson();
 		PrintWriter writer = null;
 		try {
