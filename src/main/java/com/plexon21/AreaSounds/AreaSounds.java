@@ -1,10 +1,12 @@
 package com.plexon21.AreaSounds;
 
+import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -28,10 +30,9 @@ public class AreaSounds extends JavaPlugin implements Listener {
 	FileConfiguration config;
 	World adventureWorld;
 	Logger log;
-	ArrayList<Integer> tasks;
-	ArrayList<AreaSound> activeSounds;
+	ArrayList<Integer> tasks = new ArrayList<Integer>();
+	ArrayList<AreaSound> activeSounds = new ArrayList<AreaSound>();
 	BukkitScheduler scheduler;
-	String filePath;
 	File soundsFile;
 
 	@Override
@@ -40,37 +41,28 @@ public class AreaSounds extends JavaPlugin implements Listener {
 		saveDefaultConfig();
 		config = getConfig();
 		adventureWorld = getServer().getWorld(config.getString("WorldName"));
-		this.getCommand("areasound").setExecutor(new AreaSoundsExecutor(this));
+		this.getCommand("playAreaSound").setExecutor(new AreaSoundsExecutor(this));
+		this.getCommand("stopAreaSound").setExecutor(new AreaSoundsExecutor(this));
+		this.getCommand("saveAreaSound").setExecutor(new AreaSoundsExecutor(this));
 		getServer().getPluginManager().registerEvents(this, this);
 		tasks = new ArrayList<Integer>();
 		scheduler = getServer().getScheduler();
-		filePath = config.getString("LoopFile");
-
+		soundsFile = new File(getDataFolder(), config.getString("LoopFile"));
 		try {
-			FileInputStream fis = new FileInputStream(filePath);
-			ObjectInputStream ois = new ObjectInputStream(fis);
-			while (true) {
-				AreaSound sound = (AreaSound) ois.readObject();
-				loopAreaSound(sound);
-			}
-
-		} catch (FileNotFoundException e) {
-			log.info("AreaSounds file not found");
+			readSoundsFromFile();
 		} catch (IOException e) {
-			log.info("Reading of AreaSounds file failed");
-		} catch (ClassNotFoundException e) {
-
+			log.info("Could not read AreaSounds-File");
 		}
 	}
 
 	@Override
 	public void onDisable() {
-
+		saveSoundsToFile();
 	}
 
 	public void playAreaSound(String name, String volume, String pitch, String radius, String x, String y, String z,
 			String loop) {
-		playAreaSound(name, volume, pitch, radius, x, y, z, null);
+		playAreaSound(name, volume, pitch, radius, x, y, z, loop, null);
 	}
 
 	// volume can be between 0.0 and 1.0
@@ -92,25 +84,19 @@ public class AreaSounds extends JavaPlugin implements Listener {
 			// cut of higher or lower volumes
 			vol = (vol > 1.0f) ? 1.0f : vol;
 			vol = (vol < 0.0f) ? 0.0f : vol;
-			float radF = rad / 16;
+			float radF = (float) rad / 16f;
 			vol = vol * radF;
 
-			sound = new AreaSound(name, vol, pit, xParsed, yParsed, zParsed, loopSound, players);
+			sound = new AreaSound(name, vol, pit, xParsed, yParsed, zParsed, players);
 			if (!loopSound) {
 				playAreaSoundOnce(sound);
 			}
 
 			else {
 				loopAreaSound(sound);
-
-				// write AreaSound into file
-				FileOutputStream fos = new FileOutputStream(filePath);
-				ObjectOutputStream oos = new ObjectOutputStream(fos);
-
-				oos.writeObject(sound);
-				oos.close();
 			}
 		} catch (Exception e) {
+			log.info(e.getMessage());
 			log.info("AreaSound could not be played, check your command syntax.");
 		}
 
@@ -128,6 +114,7 @@ public class AreaSounds extends JavaPlugin implements Listener {
 		}, 0L, length);
 		log.info("Sound " + taskID + " started.");
 		tasks.add(taskID);
+		sound.ID = taskID;
 		activeSounds.add(sound);
 	}
 
@@ -146,16 +133,31 @@ public class AreaSounds extends JavaPlugin implements Listener {
 
 	public void stopSingleSound(int taskID) {
 		scheduler.cancelTask(taskID);
+		int soundID = 0;
+		for (AreaSound sound : activeSounds) {
+			if (sound.ID == taskID)
+				activeSounds.remove(soundID);
+			soundID++;
+		}
+		tasks.remove(taskID);
 	}
 
 	public void stopAllSounds() {
 		scheduler.cancelAllTasks();
-		soundsFile = new File(filePath);
+		soundsFile = new File(getDataFolder(), config.getString("LoopFile"));
 		soundsFile.delete();
+		activeSounds = new ArrayList<AreaSound>();
+		tasks = new ArrayList<Integer>();
 	}
 
 	@EventHandler
 	public void onWorldSave(WorldSaveEvent event) {
+		saveSoundsToFile();
+	}
+
+	public void saveSoundsToFile() {
+
+		log.info("Path to soundfile " + soundsFile.getAbsolutePath());
 		Gson gson = new Gson();
 		PrintWriter writer = null;
 		try {
@@ -171,6 +173,27 @@ public class AreaSounds extends JavaPlugin implements Listener {
 				writer.close();
 			}
 		}
-		
 	}
+
+	private void readSoundsFromFile() throws IOException {
+		Gson gson = new Gson();
+		log.info("Path to soundfile " + soundsFile.getAbsolutePath());
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new FileReader(soundsFile));
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				loopAreaSound(gson.fromJson(line, AreaSound.class));
+			}
+		} catch (FileNotFoundException e) {
+			log.info("Sound-file not found");
+		} catch (IOException e) {
+			log.info(e.getMessage());
+		} finally {
+			if (reader != null) {
+				reader.close();
+			}
+		}
+	}
+
 }

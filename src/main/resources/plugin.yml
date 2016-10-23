@@ -8,3 +8,6 @@ commands:
    stopAreaSound:
       description: This command stops a specific task or all if no id is given
       usage: /stopAreaSound taskID
+   saveAreaSound:
+      description: Saves all running looped sounds into file.
+      usage: /saveAreaSound

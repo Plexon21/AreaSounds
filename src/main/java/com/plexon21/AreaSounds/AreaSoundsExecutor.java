@@ -15,24 +15,26 @@ public class AreaSoundsExecutor implements CommandExecutor {
 		this.plugin = plugin;
 		this.log = plugin.getLogger();
 	}
-	
+
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		// mandatory arguments: name, volume (float), pitch (float),
 		// radius (int), x (float), y (float), z (float), loop (true/false)
 		// optional arguments: player1, player2....
 		if (cmd.getName().equalsIgnoreCase("playAreaSound")) {
-			if (args.length < 8)
+			if (args.length < 8) {
 				sender.sendMessage("Not enough arguments!");
-			if (args.length > 8) {
+				return false;
+			} else if (args.length > 8) {
 				String[] players = new String[args.length - 8];
 				for (int i = 7; i < args.length; i++) {
 					players[i] = args[i];
 				}
 				plugin.playAreaSound(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], players);
+				sender.sendMessage("Sound started");
 				return true;
-			}
-			else{
+			} else {
 				plugin.playAreaSound(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+				sender.sendMessage("Sound Started");
 				return true;
 			}
 		}
@@ -49,6 +51,8 @@ public class AreaSoundsExecutor implements CommandExecutor {
 				log.info("sound with id " + taskID + " stopped");
 				return true;
 			}
+		} else if (cmd.getName().equalsIgnoreCase("saveAreaSound")) {
+			plugin.saveSoundsToFile();
 		}
 		return false;
 	}

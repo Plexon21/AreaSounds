@@ -8,10 +8,9 @@ public class AreaSound {
 	public long ID;
 	public float volume, pitch;
 	public double x, y, z;
-	public boolean loop;
 	public String[] players;
 
-	public AreaSound(String name, float volume, float pitch, double x, double y, double z, boolean loop,
+	public AreaSound(String name, float volume, float pitch, double x, double y, double z,
 			String[] players) {
 		this.name = name;
 		this.volume = volume;
@@ -19,7 +18,6 @@ public class AreaSound {
 		this.x = x;
 		this.y = y;
 		this.z = z;
-		this.loop = loop;
 		this.players = players;
 	}
 
@@ -31,7 +29,6 @@ public class AreaSound {
 		this.x = sound.x;
 		this.y = sound.y;
 		this.z = sound.z;
-		this.loop = sound.loop;
 		if(sound.players!=null){
 		this.players = new String[sound.players.length];
 		for (int i = 0; i < sound.players.length; i++) {
